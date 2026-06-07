@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faciliteringsdesigneren</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #f5f4f0; color: #1a1a1a; min-height: 100vh;
+    display: flex; justify-content: center; padding: 2rem 1rem 4rem;
+  }
+  #app { width: 100%; max-width: 720px; display: flex; flex-direction: column; }
+  .logo { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+  .headline { font-size: 22px; font-weight: 500; color: #1a1a1a; margin-bottom: 1.5rem; }
+  .stepper { display: flex; margin-bottom: 1.5rem; background: #fff; border: 1px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
+  .step { flex: 1; padding: 10px 12px; font-size: 12px; color: #aaa; border-right: 1px solid #e0ddd6; display: flex; align-items: center; gap: 7px; transition: background 0.2s; }
+  .step:last-child { border-right: none; }
+  .step-circle { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; color: #aaa; transition: all 0.2s; }
+  .step.active { background: #f0efe9; color: #1a1a1a; font-weight: 500; }
+  .step.active .step-circle { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .step.done { color: #666; }
+  .step.done .step-circle { background: #e8f5e9; border-color: #a5d6a7; color: #388e3c; font-size: 13px; }
+  .chat-card { background: #fff; border: 1px solid #e0ddd6; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .messages { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; min-height: 180px; }
+  .msg { display: flex; flex-direction: column; gap: 4px; }
+  .msg-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; }
+  .msg-text { font-size: 14px; line-height: 1.75; color: #1a1a1a; }
+  .msg-text p { margin-bottom: 0.6em; } .msg-text p:last-child { margin-bottom: 0; }
+  .msg-text strong { font-weight: 600; }
+  .msg-text ul { padding-left: 1.3em; margin-bottom: 0.6em; } .msg-text li { margin-bottom: 0.2em; }
+  .msg.user .msg-label { text-align: right; }
+  .msg.user .msg-text { background: #f0efe9; border-radius: 10px; padding: 10px 14px; align-self: flex-end; max-width: 84%; }
+  .msg.assistant .msg-text { max-width: 94%; }
+  .msg.note .msg-text { font-size: 12px; color: #999; border-left: 2px solid #ddd; padding-left: 10px; font-style: italic; }
+  .sb-block { background: #f8f7f3; border: 1px solid #e0ddd6; border-radius: 8px; padding: 1rem 1.1rem; margin-top: 0.4rem; font-size: 13px; line-height: 1.7; }
+  .sb-row { margin-bottom: 0.5em; } .sb-row:last-child { margin-bottom: 0; }
+  .sb-label { font-weight: 600; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #888; display: block; margin-bottom: 1px; }
+  .sb-indent { padding-left: 1em; }
+  .videre-btn { display: inline-block; margin-top: 10px; padding: 8px 18px; font-size: 13px; font-weight: 500; border-radius: 8px; border: 1px solid #1a1a1a; background: #1a1a1a; color: #fff; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+  .videre-btn:hover { opacity: 0.82; } .videre-btn:disabled { opacity: 0.35; cursor: default; }
+  .rediger-btn { display: inline-block; margin-top: 10px; margin-left: 8px; padding: 8px 14px; font-size: 13px; border-radius: 8px; border: 1px solid #ccc; background: #fff; color: #555; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  .rediger-btn:hover { background: #f0efe9; } .rediger-btn:disabled { opacity: 0.35; cursor: default; }
+  .typing { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+  .typing span { width: 5px; height: 5px; border-radius: 50%; background: #bbb; animation: bl 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; } .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bl { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+  #chips-area { border-top: 1px solid #e0ddd6; }
+  .chips-inner { padding: 0.75rem 1rem; }
+  .chips-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+  .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 8px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; cursor: pointer; background: #fff; color: #1a1a1a; text-align: left; display: flex; flex-direction: column; gap: 2px; transition: background 0.15s, border-color 0.15s; font-family: inherit; }
+  .chip:hover { background: #f5f4f0; border-color: #bbb; } .chip.selected { background: #f0efe9; border-color: #888; font-weight: 500; }
+  .chip-sub { font-size: 11px; color: #999; font-weight: 400; }
+  .chip-confirm { margin-top: 10px; padding: 9px 20px; font-size: 13px; border-radius: 8px; border: 1px solid #1a1a1a; background: #1a1a1a; color: #fff; cursor: pointer; font-family: inherit; font-weight: 500; transition: opacity 0.15s; }
+  .chip-confirm:hover { opacity: 0.85; } .chip-confirm:disabled { opacity: 0.3; cursor: not-allowed; }
+  .input-row { border-top: 1px solid #e0ddd6; padding: 0.75rem 1rem; display: flex; gap: 8px; align-items: flex-end; }
+  .input-row.hidden { display: none; }
+  .input-row textarea { flex: 1; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 9px 12px; font-size: 14px; font-family: inherit; line-height: 1.5; color: #1a1a1a; background: #fff; outline: none; min-height: 40px; max-height: 160px; overflow-y: auto; transition: border-color 0.15s; }
+  .input-row textarea:focus { border-color: #888; }
+  .input-row textarea::placeholder { color: #bbb; }
+  .input-row textarea:disabled { background: #f8f7f3; color: #bbb; }
+  .send-btn { padding: 0 16px; height: 38px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; font-weight: 500; color: #1a1a1a; font-family: inherit; transition: background 0.15s; }
+  .send-btn:hover { background: #f0efe9; } .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  #output-area { margin-top: 1rem; }
+  .output-card { background: #fff; border: 1px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
+  .output-header { padding: 12px 16px; background: #f5f4f0; border-bottom: 1px solid #e0ddd6; display: flex; align-items: center; justify-content: space-between; }
+  .output-title { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .copy-btn { font-size: 12px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 7px; background: #fff; cursor: pointer; color: #666; font-family: inherit; transition: background 0.15s; }
+  .copy-btn:hover { background: #f0efe9; }
+  .output-tabs { display: flex; border-bottom: 1px solid #e0ddd6; }
+  .tab-btn { padding: 10px 20px; font-size: 13px; cursor: pointer; color: #888; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; transition: color 0.15s; }
+  .tab-btn:hover { color: #1a1a1a; } .tab-btn.active { color: #1a1a1a; font-weight: 500; border-bottom-color: #1a1a1a; }
+  .tab-content { padding: 1.5rem; font-size: 13px; line-height: 1.8; color: #1a1a1a; max-height: 600px; overflow-y: auto; }
+  .tab-panel { display: none; } .tab-panel.active { display: block; }
+  .tab-panel p { margin-bottom: 0.6em; } .tab-panel strong { font-weight: 600; }
+  .tab-panel ul { padding-left: 1.3em; margin-bottom: 0.6em; } .tab-panel li { margin-bottom: 0.2em; }
+  .tab-panel h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin: 1.4em 0 0.4em; border-top: 1px solid #f0efe9; padding-top: 0.8em; }
+  .tab-panel h3:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+  .restart-btn { margin-top: 1rem; font-size: 12px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 3px; font-family: inherit; display: block; width: 100%; text-align: center; }
+  .restart-btn:hover { color: #666; }
+  .done-note { margin-top: 1rem; padding: 12px 16px; background: #f0efe9; border-radius: 10px; font-size: 13px; color: #555; text-align: center; }
+  .out-section { margin-bottom: 1.5rem; }
+  .out-section:last-child { margin-bottom: 0; }
+  .out-section-fa { background: #fffbf0; border: 1px solid #f0e6c0; border-radius: 8px; padding: 1rem 1.1rem; }
+  .fa-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a07820; margin-bottom: 0.8rem; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="logo">Faciliteringsdesigneren</div>
+  <div class="headline">Design dit forløb</div>
+  <div class="stepper">
+    <div class="step active" id="step-1"><div class="step-circle" id="sc-1">1</div>Din situation</div>
+    <div class="step" id="step-2"><div class="step-circle" id="sc-2">2</div>Vælg metode</div>
+    <div class="step" id="step-3"><div class="step-circle" id="sc-3">3</div>Dit forløbsdesign</div>
+  </div>
+  <div class="chat-card">
+    <div class="messages" id="messages"></div>
+    <div id="chips-area"></div>
+    <div class="input-row" id="input-row">
+      <textarea id="inp" placeholder="Skriv her..." rows="1" autofocus></textarea>
+      <button class="send-btn" id="send-btn">Send</button>
+    </div>
+  </div>
+  <div id="output-area"></div>
+  <button class="restart-btn" id="restart-btn">Start forfra</button>
+</div>
+<script>
+
+const SYS1 = `Du er en erfaren proceskonsulent og facilitator. Din opgave er at hjælpe brugeren med at forstå og beskrive den situation, der kræver et forløb, ved hjælp af seks områder: Rammer, Aktører, Udfordring, Effekt, Forhindringer og Tidsramme.
+
+Start med denne velkomst og sig det præcis sådan:
+
+"Velkommen til Faciliteringsdesigneren.
+
+Jeg hjælper dig med at planlægge og finde ud af hvordan et forløb kan skrues sammen, når du vil samle folk om en fælles opgave eller skal løse en udfordring, hvor I er flere involveret. Uanset om du har gjort det hundrede gange eller aldrig prøvet det før.
+
+Fortæl mig lidt om din situation. Hvad er det du står med?"
+
+FASE 1: SPØRGSMÅL
+Stil spørgsmålene ét ad gangen. Anerkend hvad brugeren fortæller inden du stiller næste spørgsmål, kort og naturligt. Undgå fagjargon og konsulentsprog. Brug aldrig fremmedord som "resonerer", "distinktion", "cluster" eller "distinkt".
+
+Hvis brugeren allerede har svaret på det næste spørgsmål i sin tidligere besked, så hop det over og anerkend det de allerede har sagt. Spørg aldrig om noget brugeren allerede har fortalt.
+
+Spørgsmål 1 (RAMMER): "Hvilken organisation eller afdeling er det, og hvad er baggrunden for at I skal i gang nu?"
+
+Spørgsmål 2 (AKTØRER): "Hvem er involveret, hvem skal være med, og er der nogen med særlig indflydelse på beslutningerne eller nogen du forventer kan være skeptiske?"
+
+Spørgsmål 3 (UDFORDRING): "Hvad er den egentlige udfordring? Hvis du skulle formulere det som ét kerneproblem, hvad er det så?"
+
+Spørgsmål 4 (MÅL FOR DAGEN): "Hvad skal du/I opnå? Hvad er succes for dig/jer, når I går hjem bagefter? Fx: en fælles beslutning, et overblik over en situation, konkrete næste skridt, at alle er hørt."
+
+Spørgsmål 5 (FORHINDRINGER): "Hvad kan komme i vejen? Tænk gerne over det på tre måder:" og tilpas de tre underniveauer konkret til situationen: Praktisk, Personer og Selve opgaven. Brug eksempler der matcher det brugeren har fortalt.
+
+Spørgsmål 6 (TIDSRAMME): "Sidste spørgsmål: er der allerede sat tid af til forløbet? Fx en kalenderaftale onsdag kl. 9-12? Eller er det endnu ikke planlagt?"
+
+Hvis brugeren angiver en konkret tidsramme (fx "tre timer" eller "kl. 9-12"), notér den og brug den aktivt i designet. Hvis ikke, spørg ikke yderligere om det her.
+
+REGLER:
+- Stil aldrig mere end ét spørgsmål ad gangen
+- Anerkend hvad brugeren siger inden næste spørgsmål, kort og naturligt
+- Hop spørgsmål over hvis brugeren allerede har svaret
+- Ingen metodeforslag i denne fase
+- Brug "forløb" ikke "workshop"
+- Brug aldrig m-dash (tegnet —). Brug komma eller punktum i stedet
+- Brug aldrig asterisker til formatering
+- Brug aldrig konsulentord som "resonerer", "distinktion", "cluster"
+- Svar altid på dansk
+
+FASE 2: SITUATIONSBILLEDE
+Når alle seks områder er dækket (eller brugeren har givet svar der dækker dem), sig først: "Tak, jeg har det jeg skal bruge. På baggrund af dine svar vil jeg foreslå dig nogle metoder, der hver på sin måde kan hjælpe jer med det I står overfor."
+
+Generer derefter et situationsbillede. Start det præcist med <<<SB_START>>> og slut med <<<SB_END>>>:
+
+<<<SB_START>>>
+Rammer: [2-3 sætninger om kontekst og baggrund]
+Aktører: [liste over nøglepersoner og deres rolle]
+Udfordring: [ét klart formuleret kerneproblem, maks. 2 sætninger]
+Mål for dagen: [det ønskede resultat og succeskriterium i hverdagsord]
+Forhindringer:
+  Praktisk: [praktiske begrænsninger]
+  Personer: [menneskelige barrierer]
+  Selve opgaven: [strukturelle barrierer]
+Tidsramme: [konkret tidsramme hvis oplyst, ellers "Ikke fastlagt endnu"]
+<<<SB_END>>>
+
+Afslut med: "Er dette dækkende, eller er der noget du vil justere, før vi går videre?"
+
+VIGTIGT: Hvis brugeren beder om en justering, skal du opdatere situationsbilledet med det samme og vise det hele igen i det korrekte format med <<<SB_START>>> og <<<SB_END>>>. Sig ikke blot "Godt, jeg har noteret det" -- generer altid et opdateret situationsbillede. Afslut igen med "Er dette dækkende..."`;
+
+const SYS2_BASE = `Du er en erfaren proceskonsulent og faglig sparringspartner. Du har modtaget et situationsbillede. Præsentér relevante procesmetoder og hjælp brugeren til et valg via dialog uden at bestemme for dem.
+
+METODEVÆRKTØJSKASSEN (vælg 2-4 situationsbestemt):
+1. Design Thinking: brugercentreret idéudvikling og innovation
+2. Appreciative Inquiry: styrkebaseret tilgang til forandring
+3. Eventstorming: kortlægning af processer og hændelser
+4. Proceskortlægning: as-is analyse og flaskehals-identifikation
+5. Co-creation workshop: involvering, ejerskab og fælles løsninger
+6. RACI: ansvarsafklaring (hvem gør hvad)
+7. Forandringsanalyse: modstand, interessenter og implementering
+8. Interviewforløb: behovsafdækning og brugerindsigt
+
+FASE 1: METODEFORSLAG
+Præsentér metoderne som flydende tekst. Skriv som en erfaren kollega, ikke en lærebog. For hver metode: hvad det er og hvornår det virker bedst (2 sætninger), hvorfor den passer konkret til denne situation (2-3 sætninger, brug situationsbilledet aktivt), styrker og svagheder som enkle listelinjer med bindestreg.
+
+Brug aldrig asterisker til formatering. Brug aldrig m-dash (—). Brug aldrig fremmedord som "resonerer", "distinktion" eller "cluster".
+
+Afslut med: "Hvad tænker du, er der én af disse der rammer din situation bedst, eller ville en kombination give mere mening?"
+
+FASE 2: DIALOG
+Gå i dialog. Afdæk motivationen bag valget naturligt i samtalen, ikke som et fast spørgsmål. Stil aldrig mere end ét spørgsmål ad gangen. Bestem aldrig.
+
+FASE 3: BEKRÆFTELSE
+Når valget er klart, placer opsummeringen præcist mellem <<<MV_START>>> og <<<MV_END>>>. Skriv IKKE opsummeringen et andet sted i svaret:
+
+<<<MV_START>>>
+Primær metode: [navn]
+[Evt. supplerende metode og hvordan den bruges]
+Begrundelse: [2-3 sætninger koblet til situationen]
+Opmærksomhedspunkter: [1-2 konkrete ting]
+<<<MV_END>>>
+
+Afslut med: "Godt. Så bruger vi [metode] som udgangspunkt. Vil du at jeg nu genererer et konkret forløbsdesign til dig?"
+
+Når brugeren bekræfter: afslut svaret med <<<MODUL2_DONE>>>
+
+Regler: Præsentér, bestem aldrig. Undgå konsulentsprog og fremmedord. Brug aldrig m-dash. Brug aldrig asterisker. Svar altid på dansk.`;
+
+const SYS3_FA = `Du er en erfaren procesdesigner. Generer FA-overblikket til dette forløb. Du designer til den specifikke situation.
+
+VIGTIGT om tidsramme: Hvis situationsbilledet angiver en konkret tidsramme, bruger agendaen præcis den. Buffer er obligatorisk.
+
+FORMATERING: Brug aldrig m-dash. Brug aldrig asterisker. Sektionsoverskrifter i store bogstaver med kolon. Lister med bindestreg. Skriv i instruktionsform til facilitatoren, ikke som manuskript. I stedet for at skrive hvad facilitatoren skal sige, skriv hvad facilitatoren skal opnå og giv et konkret forslag til formulering. Brug aldrig fremmedord som resonerer eller distinktion.
+
+Outputtet har tre sektioner adskilt med markering:
+
+<<<S1_START>>>
+FORMÅL OG MÅL FOR DAGEN:
+[2-3 sætninger. Konkret og målbart, koblet til udfordringen og det ønskede resultat. Kan deles med deltagerne]
+<<<S1_END>>>
+
+<<<S2_START>>>
+SÆRLIGE HENSYN:
+[Kun til facilitatoren. Hvem er de vanskelige dynamikker, hvad er der på spil under overfladen. For hver dynamik: hvad er risikoen, hvad gør facilitatoren, ét konkret forslag til håndtering. Inkl. beslutningstagere, skeptikere og uformelle magtstrukturer]
+<<<S2_END>>>
+
+<<<S3_START>>>
+TIDSRAMME OG REALISME:
+[Samlet varighed, energikurve, hvad der realistisk kan nås]
+
+ENERGIZER (kun hvis situationen indikerer skepsis eller lav tillid):
+[Konkret trin-for-trin. Ellers udelad afsnittet]
+
+AGENDA MED INSTRUKTIONER:
+[Drejebogsagtig. For hvert punkt: tid, aktivitet og formål, instruktion til facilitatoren med forslag til håndtering af svære situationer, materialer og fysisk opstilling]
+
+MATERIALER OG FORBEREDELSE:
+[Komplet liste inkl. rumopsætning]
+
+FORVENTET OUTPUT:
+[Konkret succeskriterium for dagen]
+
+FAGLIGE REDSKABER:
+[2-3 konkrete greb til den valgte metode i denne situation]
+
+FACILITATORENS OPMÆRKSOMHEDSPUNKTER:
+[2-3 situationsspecifikke risici med konkret handlingsforslag til hvert]
+<<<S3_END>>>
+
+VIGTIG REGEL: Facilitatoren instruerer, deltagerne udfører. Deltagerne skriver, placerer og grupperer. Facilitatoren observerer.
+
+Design til denne specifikke situation. Svar altid på dansk. Brug aldrig fagtermer når et almindeligt ord dækker det samme.`;
+
+const SYS3_AGENDA = `Du er en erfaren procesdesigner. Generer en kort deltageragenda til forløbet.
+
+Deltageragendaen er neutral og kan sendes til deltagerne forud for forløbet. Den indeholder ingen facilitatornotes, ingen interne hensyn og ingen metodebeskrivelser.
+
+Indhold: formål i hverdagsord, program med tidspunkter og korte aktivitetsbeskrivelser, eventuel forberedelse deltagerne skal gøre.
+
+Tone: venlig og inviterende. Skriv vi ikke deltagerne.
+
+Brug aldrig m-dash. Brug aldrig asterisker. Svar altid på dansk.
+
+Start med <<<AG_START>>> og slut med <<<AG_END>>>.`;
+
+const METHOD_LABELS = {
+  'Design Thinking': 'Brugercentreret idéudvikling',
+  'Appreciative Inquiry': 'Styrkebaseret forandringstilgang',
+  'Eventstorming': 'Kortlægning af processer og hændelser',
+  'Proceskortlægning': 'As-is analyse og flaskehalse',
+  'Co-creation workshop': 'Fælles løsninger og ejerskab',
+  'RACI': 'Ansvarsafklaring',
+  'Forandringsanalyse': 'Modstand og implementering',
+  'Interviewforløb': 'Behovsafdækning og indsigt'
+};
+
+let mod = 1, hist = [], loading = false;
+let sbillede = '', mvalg = '';
+let chipsShown = false, waitingForChip = false;
+let methodsConfirmed = false;
+
+const msgsEl = document.getElementById('messages');
+const inpEl = document.getElementById('inp');
+const btnEl = document.getElementById('send-btn');
+const chipsArea = document.getElementById('chips-area');
+const outputArea = document.getElementById('output-area');
+const inputRow = document.getElementById('input-row');
+
+function setStep(n) {
+  mod = n;
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    const sc = document.getElementById('sc-' + i);
+    el.className = 'step';
+    if (i < n) { el.classList.add('done'); sc.textContent = '\u2713'; }
+    else if (i === n) { el.classList.add('active'); sc.textContent = i; }
+    else { sc.textContent = i; }
+  });
+}
+
+function scrollToBottom() {
+  // Scroll vinduet ned til bunden af chat-kortet
+  const last = msgsEl.lastElementChild;
+  if (last) last.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function render(text) {
+  if (!text) return '';
+  text = text.replace(/\u2014/g, ',');
+  text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  text = text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  text = text.replace(/<<<[^>]*>>>/g, '');
+  const lines = text.split('\n');
+  let html = '', inList = false;
+  for (const line of lines) {
+    const t = line.trim();
+    if (/^- /.test(t)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += '<li>' + t.slice(2) + '</li>';
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (t) html += '<p>' + t + '</p>';
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function renderOut(text) {
+  if (!text) return '<p><em>Indhold mangler.</em></p>';
+  text = text.replace(/<<<D[12]_(?:START|END)>>>/g,'').replace(/\u2014/g,',').trim();
+  text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  text = text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  const lines = text.split('\n');
+  let html = '', inList = false;
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { if (inList) { html += '</ul>'; inList = false; } continue; }
+    // Overskrift: linje i store bogstaver med kolon, maks 70 tegn
+    if (/^[A-ZÆØÅ][A-ZÆØÅ \(\)]+:/.test(t) && t.length < 70 && !/^[A-ZÆØÅ][a-zæøå]/.test(t)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<h3>' + t + '</h3>';
+    } else if (/^- /.test(t)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += '<li>' + t.slice(2) + '</li>';
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<p>' + t + '</p>';
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function renderSB(raw) {
+  const content = raw.replace(/<<<SB_(?:START|END)>>>/g,'').trim();
+  const lines = content.split('\n');
+  let html = '<div class="sb-block">';
+  let inFoer = false;
+  let currentLabel = null;
+  let currentLines = [];
+
+  function flushField() {
+    if (!currentLabel) return;
+    const val = currentLines.join(' ').trim();
+    html += '<div class="sb-row"><span class="sb-label">' + currentLabel + '</span><span>' + val + '</span></div>';
+    currentLabel = null;
+    currentLines = [];
+  }
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    if (/^Forhindringer:/i.test(t)) {
+      flushField(); inFoer = true;
+      html += '<div class="sb-row"><span class="sb-label">Forhindringer</span></div>';
+      continue;
+    }
+    if (/^Tidsramme:/i.test(t)) {
+      flushField(); inFoer = false;
+      const val = t.replace(/^Tidsramme:\s*/i, '');
+      currentLabel = 'Tidsramme'; currentLines = [val];
+      continue;
+    }
+    const isIndented = line.startsWith(' ') || line.startsWith('\t');
+    const labelMatch = !isIndented && t.match(/^([A-Za-z\u00c6\u00d8\u00c5\u00e6\u00f8\u00e5][A-Za-z\u00c6\u00d8\u00c5\u00e6\u00f8\u00e5 ]*[A-Za-z\u00c6\u00d8\u00c5\u00e6\u00f8\u00e5]):\s*(.*)/u);
+    if (labelMatch && !inFoer) {
+      flushField();
+      currentLabel = labelMatch[1];
+      if (labelMatch[2]) currentLines.push(labelMatch[2]);
+    } else if (inFoer) {
+      const sub = t.replace(/^[-\s]*/,'');
+      if (sub) html += '<div class="sb-row sb-indent"><span>' + sub + '</span></div>';
+    } else if (currentLabel) {
+      const sub = t.replace(/^[-\s]*/,'');
+      if (sub) currentLines.push(sub);
+    }
+  }
+  flushField();
+  html += '</div>';
+  return html;
+}
+
+function addMsg(role, text, isHTML) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  if (role !== 'note') {
+    const l = document.createElement('div'); l.className = 'msg-label';
+    l.textContent = role === 'user' ? 'Dig' : 'Faciliteringsdesigneren';
+    d.appendChild(l);
+  }
+  const t = document.createElement('div'); t.className = 'msg-text';
+  if (isHTML) { t.innerHTML = text; }
+  else if (role === 'user') { t.textContent = text; }
+  else { t.innerHTML = render(text); }
+  d.appendChild(t);
+  msgsEl.appendChild(d);
+  setTimeout(scrollToBottom, 50);
+  return d;
+}
+
+function showTyping() {
+  const d = document.createElement('div'); d.id = 'typ'; d.className = 'msg assistant';
+  const l = document.createElement('div'); l.className = 'msg-label'; l.textContent = 'Faciliteringsdesigneren'; d.appendChild(l);
+  const t = document.createElement('div'); t.className = 'msg-text';
+  t.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  d.appendChild(t); msgsEl.appendChild(d);
+  setTimeout(scrollToBottom, 50);
+}
+function rmTyping() { const e = document.getElementById('typ'); if(e) e.remove(); }
+
+function getSys() {
+  if (mod === 1) return SYS1;
+  if (mod === 2) return SYS2_BASE + '\n\nSITUATIONSBILLEDE:\n' + sbillede;
+  return SYS3_BASE + '\n\nSITUATIONSBILLEDE:\n' + sbillede + '\n\nMETODEVALG:\n' + mvalg;
+}
+
+async function callClaude(msg) {
+  hist.push({ role: 'user', content: msg });
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system: getSys(), messages: hist })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  const text = data.content?.map(b => b.text||'').join('') || '';
+  hist.push({ role: 'assistant', content: text });
+  return text;
+}
+
+function extractSB(text) {
+  const m = text.match(/<<<SB_START>>>[\s\S]*?<<<SB_END>>>/);
+  if (m) { sbillede = m[0].replace(/<<<SB_(?:START|END)>>>/g,'').trim(); return m[0]; }
+  return null;
+}
+
+function extractMV(text) {
+  const m = text.match(/<<<MV_START>>>[\s\S]*?<<<MV_END>>>/);
+  if (m) { mvalg = m[0].replace(/<<<MV_(?:START|END)>>>/g,'').trim(); }
+}
+
+function extractMethods(text) {
+  return Object.keys(METHOD_LABELS).filter(n => text.toLowerCase().includes(n.toLowerCase()));
+}
+
+function lock(chipsMode) {
+  loading = true; btnEl.disabled = true;
+  if (chipsMode) {
+    waitingForChip = true; inpEl.disabled = true;
+    inpEl.placeholder = 'Brug valgfelterne herunder...';
+  }
+}
+
+function unlock() {
+  loading = false; btnEl.disabled = false;
+  waitingForChip = false; inpEl.disabled = false;
+  inpEl.placeholder = 'Skriv her...';
+  inpEl.focus();
+}
+
+function showChips(methods) {
+  chipsArea.innerHTML = '';
+  if (!methods.length) return;
+  const inner = document.createElement('div'); inner.className = 'chips-inner';
+  const lbl = document.createElement('div'); lbl.className = 'chips-label';
+  lbl.textContent = 'V\u00e6lg \u00e9n eller flere'; inner.appendChild(lbl);
+  const wrap = document.createElement('div'); wrap.className = 'chips-wrap';
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'chip-confirm'; confirmBtn.textContent = 'Bekr\u00e6ft valg'; confirmBtn.disabled = true;
+  methods.forEach(name => {
+    const c = document.createElement('button'); c.className = 'chip';
+    c.innerHTML = '<span>' + name + '</span><span class="chip-sub">' + (METHOD_LABELS[name]||'') + '</span>';
+    c.addEventListener('click', () => {
+      c.classList.toggle('selected');
+      confirmBtn.disabled = wrap.querySelectorAll('.chip.selected').length === 0;
+    });
+    c.dataset.m = name; wrap.appendChild(c);
+  });
+  inner.appendChild(wrap);
+  confirmBtn.addEventListener('click', () => {
+    const chosen = methods.filter(m => wrap.querySelector('[data-m="' + m + '"]')?.classList.contains('selected')).join(', ');
+    chipsArea.innerHTML = ''; chipsShown = false; methodsConfirmed = true;
+    unlock();
+    handleMsg('Jeg v\u00e6lger: ' + chosen);
+  });
+  inner.appendChild(confirmBtn);
+  chipsArea.appendChild(inner);
+  lock(true);
+  setTimeout(scrollToBottom, 50);
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(function() { fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
+function showOutput(faText, agText) {
+  var s1m = faText.match(/<<<S1_START>>>([\s\S]*?)<<<S1_END>>>/);
+  var s2m = faText.match(/<<<S2_START>>>([\s\S]*?)<<<S2_END>>>/);
+  var s3m = faText.match(/<<<S3_START>>>([\s\S]*?)<<<S3_END>>>/);
+  var s1 = s1m ? s1m[1] : '';
+  var s2 = s2m ? s2m[1] : '';
+  var s3 = s3m ? s3m[1] : faText;
+  var agm = agText ? agText.match(/<<<AG_START>>>([\s\S]*?)<<<AG_END>>>/) : null;
+  var ag = agm ? agm[1] : (agText || '');
+
+  var tab1html =
+    (s1 ? '<div class="out-section">' + renderOut('FORMÅL OG MÅL FOR DAGEN: ' + s1) + '</div>' : '') +
+    (s2 ? '<div class="out-section out-section-fa"><div class="fa-badge">Kun til facilitatoren</div>' + renderOut('SÆRLIGE HENSYN: ' + s2) + '</div>' : '');
+  var tab2html = '<div class="out-section">' + renderOut(s3) + '</div>';
+  var tab3html = '<div class="out-section">' + renderOut(ag) + '</div>';
+
+  outputArea.innerHTML = '';
+  var card = document.createElement('div'); card.className = 'output-card';
+  card.innerHTML =
+    '<div class="output-header">' +
+      '<div class="output-title">\u2713 Dit forl\u00f8bsdesign er klar</div>' +
+      '<button class="copy-btn" id="copy-all">Kopier alt</button>' +
+    '</div>' +
+    '<div class="output-tabs">' +
+      '<button class="tab-btn active" id="tab-btn-1">Form\u00e5l og hensyn</button>' +
+      '<button class="tab-btn" id="tab-btn-2">Drejebog</button>' +
+      '<button class="tab-btn" id="tab-btn-3">Deltageragenda</button>' +
+    '</div>' +
+    '<div class="tab-content">' +
+      '<div class="tab-panel active" id="tab-p1">' + tab1html + '</div>' +
+      '<div class="tab-panel" id="tab-p2">' + tab2html + '</div>' +
+      '<div class="tab-panel" id="tab-p3">' + tab3html + '</div>' +
+    '</div>';
+  outputArea.appendChild(card);
+
+  var doneNote = document.createElement('div');
+  doneNote.className = 'done-note';
+  doneNote.textContent = 'Dit design er klar. Kopier det, del det eller start forfra.';
+  outputArea.appendChild(doneNote);
+
+  document.getElementById('tab-btn-1').addEventListener('click', function() { switchTab(1); });
+  document.getElementById('tab-btn-2').addEventListener('click', function() { switchTab(2); });
+  document.getElementById('tab-btn-3').addEventListener('click', function() { switchTab(3); });
+  document.getElementById('copy-all').addEventListener('click', function() {
+    var t1 = document.getElementById('tab-p1').innerText;
+    var t2 = document.getElementById('tab-p2').innerText;
+    var t3 = document.getElementById('tab-p3').innerText;
+    copyText('FORMÅL OG HENSYN\n\n' + t1 + '\n\n---\n\nDREJEBOG\n\n' + t2 + '\n\n---\n\nDELTAGERAGENDA\n\n' + t3);
+    this.textContent = 'Kopieret'; setTimeout(function() { document.getElementById('copy-all').textContent = 'Kopier alt'; }, 2000);
+  });
+  setTimeout(function() { outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+}
+
+function switchTab(n) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-p' + n).classList.add('active');
+  document.getElementById('tab-btn-' + n).classList.add('active');
+}
+
+function showSBBlock(sbRaw, efterText) {
+  const wrap = document.createElement('div'); wrap.className = 'msg assistant';
+  const lbl = document.createElement('div'); lbl.className = 'msg-label'; lbl.textContent = 'Faciliteringsdesigneren'; wrap.appendChild(lbl);
+  const txt = document.createElement('div'); txt.className = 'msg-text';
+  txt.innerHTML = renderSB(sbRaw);
+  const btnArea = document.createElement('div'); btnArea.style.marginTop = '10px';
+  const videreBtn = document.createElement('button'); videreBtn.className = 'videre-btn'; videreBtn.textContent = 'Ja, videre';
+  const redigerBtn = document.createElement('button'); redigerBtn.className = 'rediger-btn'; redigerBtn.textContent = 'Jeg vil justere noget';
+  btnArea.appendChild(videreBtn); btnArea.appendChild(redigerBtn);
+  txt.appendChild(btnArea); wrap.appendChild(txt);
+  msgsEl.appendChild(wrap);
+  if (efterText && efterText.trim()) addMsg('assistant', efterText.trim());
+  setTimeout(scrollToBottom, 50);
+
+  videreBtn.addEventListener('click', () => {
+    videreBtn.disabled = true; redigerBtn.disabled = true;
+    goToMod2();
+  });
+  redigerBtn.addEventListener('click', () => {
+    videreBtn.disabled = true; redigerBtn.disabled = true;
+    unlock(); addMsg('assistant', 'Hvad vil du justere?');
+  });
+}
+
+async function goToMod2() {
+  setStep(2); hist = []; chipsShown = false; methodsConfirmed = false;
+  addMsg('note', 'Situationsbilledet er låst. Finder relevante metoder...');
+  lock(false); showTyping();
+  try {
+    const r2 = await callClaude('Situationsbilledet er bekræftet:\n' + sbillede + '\n\nPræsentér relevante metoder.');
+    rmTyping(); addMsg('assistant', r2);
+    const methods = extractMethods(r2);
+    if (methods.length && !chipsShown) { chipsShown = true; showChips(methods); return; }
+  } catch(e) { rmTyping(); addMsg('assistant', 'Forbindelsesfejl. Prøv igen.'); }
+  unlock();
+}
+
+async function apiCall(systemPrompt, userMsg, maxTokens) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  return data.content?.map(b => b.text||'').join('') || '';
+}
+
+async function goToMod3() {
+  setStep(3); hist = [];
+  lock(false); inputRow.classList.add('hidden');
+  const ctx = 'SITUATIONSBILLEDE:\n' + sbillede + '\n\nMETODEVALG:\n' + mvalg;
+
+  addMsg('note', 'Metodevalget er bekræftet. Genererer dit overblik...');
+  showTyping();
+  let faText = '';
+  try {
+    faText = await apiCall(SYS3_FA, ctx + '\n\nGenerer FA-overblikket.', 5000);
+    rmTyping();
+  } catch(e) {
+    rmTyping(); addMsg('assistant', 'Forbindelsesfejl. Prøv igen.');
+    inputRow.classList.remove('hidden'); unlock(); return;
+  }
+
+  addMsg('note', 'Overblikket er klar. Genererer deltageragenda...');
+  showTyping();
+  let agText = '';
+  try {
+    agText = await apiCall(SYS3_AGENDA, ctx + '\n\nGenerer deltageragendaen.', 1500);
+    rmTyping();
+  } catch(e) {
+    rmTyping();
+    agText = '<<<AG_START>>>\nDeltageragendaen kunne ikke genereres. Prøv at genindlæse.\n<<<AG_END>>>';
+  }
+
+  addMsg('assistant', 'Dit forløbsdesign er klar. Se det nedenfor.');
+  showOutput(faText, agText);
+  loading = false;
+}
+
+async function handleMsg(msg) {
+  loading = true; btnEl.disabled = true;
+  addMsg('user', msg); showTyping();
+  try {
+    const reply = await callClaude(msg); rmTyping();
+    if (mod === 1) {
+      const sbRaw = extractSB(reply);
+      if (sbRaw) {
+        // Nyt eller opdateret situationsbillede -- vis det med Videre/Rediger-knapper
+        const foerSB = reply.split('<<<SB_START>>>')[0].trim();
+        const efterSB = (reply.split('<<<SB_END>>>')[1] || '').trim();
+        if (foerSB) addMsg('assistant', foerSB);
+        showSBBlock(sbRaw, efterSB);
+        lock(false);
+      } else {
+        // Svar på et opklarende spørgsmål -- vis svaret og vent på næste input.
+        // AI'en skal generere et nyt situationsbillede når justeringen er modtaget,
+        // men det kan ske i næste svar. Lås ikke -- lad brugeren fortsætte dialogen.
+        addMsg('assistant', reply); unlock();
+      }
+    } else if (mod === 2) {
+      extractMV(reply);
+      // Fjern MV-blokken fra den viste tekst (den er allerede gemt i mvalg)
+      const clean = reply.replace('<<<MODUL2_DONE>>>','').replace(/<<<MV_START>>>[\s\S]*?<<<MV_END>>>/g,'').trim();
+      if (clean) addMsg('assistant', clean);
+      if (reply.includes('<<<MODUL2_DONE>>>')) {
+        chipsArea.innerHTML = ''; setTimeout(goToMod3, 500);
+      } else {
+        const methods = extractMethods(reply);
+        if (methods.length && !chipsShown && !methodsConfirmed) { chipsShown = true; showChips(methods); }
+        else unlock();
+      }
+    } else {
+      addMsg('assistant', reply); unlock();
+    }
+  } catch(e) {
+    rmTyping(); addMsg('assistant', 'Forbindelsesfejl. Prøv igen.'); unlock();
+  }
+}
+
+async function send() {
+  if (loading || waitingForChip) return;
+  const msg = inpEl.value.trim();
+  if (!msg) return;
+  inpEl.value = ''; inpEl.style.height = 'auto';
+  await handleMsg(msg);
+}
+
+function restart() {
+  mod = 1; hist = []; loading = false; sbillede = ''; mvalg = '';
+  chipsShown = false; waitingForChip = false; methodsConfirmed = false;
+  msgsEl.innerHTML = ''; chipsArea.innerHTML = ''; outputArea.innerHTML = '';
+  inputRow.classList.remove('hidden'); unlock(); setStep(1); init();
+}
+
+async function init() {
+  loading = true; btnEl.disabled = true; showTyping();
+  try {
+    const r = await callClaude('start'); rmTyping(); addMsg('assistant', r);
+  } catch(e) {
+    rmTyping();
+    addMsg('assistant', 'Velkommen til Faciliteringsdesigneren.\n\nJeg hjælper dig med at planlægge og finde ud af hvordan et forløb kan skrues sammen, når du vil samle folk om en fælles opgave eller skal løse en udfordring, hvor I er flere involveret. Uanset om du har gjort det hundrede gange eller aldrig prøvet det før.\n\nFortæl mig lidt om din situation. Hvad er det du står med?');
+  }
+  loading = false; btnEl.disabled = false; inpEl.focus();
+}
+
+btnEl.addEventListener('click', send);
+document.getElementById('restart-btn').addEventListener('click', restart);
+inpEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!waitingForChip) send(); }
+});
+inpEl.addEventListener('input', () => {
+  inpEl.style.height = 'auto';
+  inpEl.style.height = Math.min(inpEl.scrollHeight, 160) + 'px';
+});
+
+init();
+
+</script>
+</body>
+</html>
